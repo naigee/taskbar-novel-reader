@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>任务栏小说阅读器</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif;
+            background: transparent;
+            color: #000;
+            padding: 0;
+            margin: 0;
+            text-align: center;
+            overflow: hidden;
+            user-select: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .content-box {
+            background: transparent;
+            border-radius: 0;
+            padding: 8px 15px;
+            display: flex;
+            align-items: center;
+            box-shadow: none;
+            border: none;
+            min-width: 250px;
+            max-width: 300px;
+            cursor: pointer;
+        }
+
+        .content-box:hover {
+            background: rgba(0, 0, 0, 0);
+            border-radius: 5px;
+        }
+
+        .icon {
+            font-size: 16px;
+            margin-right: 10px;
+            flex-shrink: 0;
+            color: #000;
+        }
+
+        #novel-content {
+            font-size: 10px;
+            line-height: 1.4;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: transparent;
+            background: transparent;
+            flex: 1;
+            font-weight: 500;
+            text-shadow: none;
+            cursor: pointer;
+        }
+
+        #novel-content:hover {
+            color: #000000;
+        }
+        
+        /* 拖拽时的提示样式 */
+        body.drag-over {
+            background: rgba(0, 150, 255, 0.3);
+        }
+        
+        body.drag-over .content-box {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px dashed #0096FF;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="content-box" onclick="handleClick(event)" onwheel="handleWheel(event)">
+        <span id="novel-content">点击开始阅读</span>
+    </div>
+    
+    <script>
+        const { ipcRenderer } = require('electron');
+        
+        // console.log('渲染进程启动');
+        ipcRenderer.on('update-content', (event, text) => {
+            const element = document.getElementById('novel-content');
+            if (element) {
+                element.textContent = text;
+            }
+        });
+        
+        let lastWheelTime = 0;
+        const wheelDelay = 500;
+        let lastClickTime = 0;
+        const clickDelay = 300;
+        
+        // 拖拽导入相关
+        let dragCounter = 0;
+        
+        // 阻止默认行为
+        document.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            dragCounter++;
+            document.body.classList.add('drag-over');
+        });
+        
+        document.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dragCounter--;
+            if (dragCounter === 0) {
+                document.body.classList.remove('drag-over');
+            }
+        });
+        
+        document.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+        
+        document.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragCounter = 0;
+            document.body.classList.remove('drag-over');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.name.endsWith('.txt')) {
+                    // 通知主进程处理文件导入
+                    ipcRenderer.send('import-novel', file.path);
+                } else {
+                    alert('请导入 TXT 格式的小说文件');
+                }
+            }
+        });
+        
+        function handleWheel(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const currentTime = Date.now();
+            
+            if (currentTime - lastWheelTime < wheelDelay) {
+                // console.log('滚轮冷却中，跳过');
+                return;
+            }
+            
+            lastWheelTime = currentTime;
+            
+            if (event.deltaY > 0) {
+                // console.log('滚轮向下');
+                ipcRenderer.send('next-line');
+            } else if (event.deltaY < 0) {
+                // console.log('滚轮向上');
+                ipcRenderer.send('prev-line');
+            }
+        }
+        
+        function handleClick(event) {
+            event.stopPropagation();
+            
+            const currentTime = Date.now();
+            if (currentTime - lastClickTime < clickDelay) {
+                // console.log('点击冷却中，跳过');
+                return;
+            }
+            
+            lastClickTime = currentTime;
+            // console.log('点击切换下一行');
+            ipcRenderer.send('next-line');
+        }
+        
+        // console.log('监听器已设置');
+    </script>
+</body>
+
+</html>

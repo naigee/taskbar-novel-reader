@@ -1,0 +1,69 @@
+{
+    "name": "taskbar-novel-reader",
+    "version": "1.0.0",
+    "description": "在 Windows 任务栏显示小说内容的阅读器",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron .",
+        "dev": "electron . --dev",
+        "build": "electron-builder",
+        "build:win": "electron-builder --win",
+        "pack": "electron-builder --dir"
+    },
+    "keywords": [
+        "electron",
+        "novel",
+        "taskbar"
+    ],
+    "author": "",
+    "license": "MIT",
+    "devDependencies": {
+        "electron": "^28.0.0",
+        "electron-builder": "^24.13.3"
+    },
+    "build": {
+        "appId": "com.taskbar.novel.reader",
+        "productName": "任务栏小说阅读器",
+        "directories": {
+            "output": "dist"
+        },
+        "files": [
+            "main.js",
+            "preload.js",
+            "index.html",
+            "icon.png",
+            "config.json",
+            "novel/",
+            "!node_modules/.cache",
+            "!*.md"
+        ],
+        "extraResources": [
+            {
+                "from": "novel",
+                "to": "novel",
+                "filter": ["**/*"]
+            }
+        ],
+        "win": {
+            "target": [
+                {
+                    "target": "nsis",
+                    "arch": [
+                        "x64"
+                    ]
+                }
+            ],
+            "icon": "icon.png"
+        },
+        "nsis": {
+            "oneClick": false,
+            "allowToChangeInstallationDirectory": true,
+            "createDesktopShortcut": true,
+            "createStartMenuShortcut": true,
+            "shortcutName": "任务栏小说阅读器"
+        }
+    },
+    "dependencies": {
+        "pinyin": "^4.0.0"
+    }
+}
